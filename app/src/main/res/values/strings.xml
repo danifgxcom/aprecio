@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Aprecio</string>
+    <string name="app_title">Detector de Precios Engañosos</string>
+    <string name="app_description">Escanea precios de productos para detectar prácticas engañosas y calcular el precio real por kilo</string>
+    <string name="capture_photo">Capturar</string>
+    <string name="select_from_gallery">Galería</string>
+    <string name="analysis_results">Resultados del Análisis:</string>
+    <string name="no_analysis_yet">Aún no se ha analizado ninguna imagen</string>
+    <string name="price_per_kg">Precio real por kilo: %.2f€</string>
+    <string name="deceptive_pricing">⚠️ PRÁCTICA ENGAÑOSA DETECTADA</string>
+    <string name="normal_pricing">✅ Precio mostrado correctamente</string>
+</resources>
