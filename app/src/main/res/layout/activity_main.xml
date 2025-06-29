@@ -15,6 +15,21 @@
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
+    <!-- Alerta de engaño -->
+    <TextView
+        android:id="@+id/deceptionAlert"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚠️ POSIBLE ENGAÑO DETECTADO ⚠️"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:background="@android:color/holo_red_dark"
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
     <!-- Container para cámara o imagen analizada -->
     <FrameLayout
         android:id="@+id/imageContainer"

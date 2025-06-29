@@ -2,7 +2,6 @@ package com.danifgx.aprecio
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,13 +13,14 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.danifgx.aprecio.databinding.ActivityMainBinding
-import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -193,10 +193,12 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun analyzeImage(bitmap: Bitmap) {
-        currentBitmap = bitmap
-        showAnalysisView(bitmap)
+        // Optimizar el bitmap para reducir memoria
+        val optimizedBitmap = optimizeBitmap(bitmap)
+        currentBitmap = optimizedBitmap
+        showAnalysisView(optimizedBitmap)
         
-        priceAnalyzer.analyzeImage(bitmap) { result ->
+        priceAnalyzer.analyzeImage(optimizedBitmap) { result ->
             runOnUiThread {
                 if (result != null && result.products.isNotEmpty()) {
                     displayAnalysisResults(result)
@@ -208,11 +210,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    private fun optimizeBitmap(bitmap: Bitmap): Bitmap {
+        val maxWidth = 1920
+        val maxHeight = 1080
+        
+        return if (bitmap.width > maxWidth || bitmap.height > maxHeight) {
+            val ratio = minOf(
+                maxWidth.toFloat() / bitmap.width,
+                maxHeight.toFloat() / bitmap.height
+            )
+            val newWidth = (bitmap.width * ratio).toInt()
+            val newHeight = (bitmap.height * ratio).toInt()
+            
+            Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true).also {
+                if (it != bitmap) bitmap.recycle() // Liberar memoria del bitmap original
+            }
+        } else {
+            bitmap
+        }
+    }
+    
     private fun displayAnalysisResults(result: PriceAnalysisResult) {
         currentProducts = result.products
         
         // Actualizar adapter
         productsAdapter.updateProducts(currentProducts)
+        
+        // Verificar si hay productos engañosos
+        val hasDeceptiveProducts = currentProducts.any { it.isDeceptive }
+        if (hasDeceptiveProducts) {
+            showDeceptionAlert()
+        } else {
+            hideDeceptionAlert()
+        }
         
         // Mostrar overlays si tenemos bitmap y coordenadas
         currentBitmap?.let { bitmap ->
@@ -255,9 +285,14 @@ class MainActivity : AppCompatActivity() {
         binding.captureButton.visibility = View.VISIBLE
         binding.galleryButton.visibility = View.VISIBLE
         
-        // Limpiar datos
+        // Limpiar datos y liberar memoria
+        currentBitmap?.recycle()
         currentBitmap = null
         currentProducts = emptyList()
+        binding.analyzedImage.setImageBitmap(null)
+        
+        // Forzar garbage collection
+        System.gc()
     }
     
     private fun showProductDetails(product: ProductInfo, number: Int) {
@@ -281,9 +316,22 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
     
+    private fun showDeceptionAlert() {
+        binding.deceptionAlert.visibility = View.VISIBLE
+    }
+    
+    private fun hideDeceptionAlert() {
+        binding.deceptionAlert.visibility = View.GONE
+    }
+    
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        
+        // Limpiar recursos
+        currentBitmap?.recycle()
+        currentBitmap = null
+        overlayManager.hideOverlays()
     }
     
     companion object {

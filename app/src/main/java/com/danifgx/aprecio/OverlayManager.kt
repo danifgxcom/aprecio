@@ -26,6 +26,7 @@ class OverlayManager(
             val boundingBox = product.boundingBox
             
             if (boundingBox != null) {
+                // Crear overlay del número
                 val overlayView = createOverlayView(productNumber, product, onOverlayClick)
                 
                 // Calcular la posición del overlay en la imagen
@@ -46,6 +47,12 @@ class OverlayManager(
                 
                 overlayView.layoutParams = layoutParams
                 overlayContainer.addView(overlayView)
+                
+                // Si es engañoso, agregar reborde rojo
+                if (product.isDeceptive) {
+                    val borderView = createDeceptiveBorderView(boundingBox, scaleX, scaleY)
+                    overlayContainer.addView(borderView)
+                }
             }
         }
         
@@ -59,9 +66,20 @@ class OverlayManager(
     ): View {
         val textView = TextView(context).apply {
             text = number.toString()
-            background = ContextCompat.getDrawable(context, R.drawable.circle_background)
-            setTextColor(ContextCompat.getColor(context, android.R.color.white))
-            textSize = 16f
+            
+            // Si es engañoso, usar fondo rojo, sino el fondo normal
+            if (product.isDeceptive) {
+                background = ContextCompat.getDrawable(context, R.drawable.circle_background)
+                background?.setTint(ContextCompat.getColor(context, android.R.color.holo_red_dark))
+                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                textSize = 18f // Más grande para destacar
+            } else {
+                background = ContextCompat.getDrawable(context, R.drawable.circle_background)
+                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                textSize = 16f
+            }
+            
             setPadding(16, 16, 16, 16)
             gravity = android.view.Gravity.CENTER
             
@@ -70,12 +88,42 @@ class OverlayManager(
                 onOverlayClick(product, number)
             }
             
-            // Configurar tamaño mínimo
-            minWidth = 64
-            minHeight = 64
+            // Configurar tamaño mínimo, más grande si es engañoso
+            if (product.isDeceptive) {
+                minWidth = 80
+                minHeight = 80
+            } else {
+                minWidth = 64
+                minHeight = 64
+            }
         }
         
         return textView
+    }
+    
+    private fun createDeceptiveBorderView(boundingBox: Rect, scaleX: Float, scaleY: Float): View {
+        val borderView = View(context).apply {
+            // Crear un drawable personalizado para el reborde cuadrado
+            val drawable = ContextCompat.getDrawable(context, android.R.drawable.edit_text)
+            drawable?.setTint(ContextCompat.getColor(context, android.R.color.holo_red_dark))
+            background = drawable
+            alpha = 0.8f // Un poco transparente para ver el contenido
+        }
+        
+        val padding = 20 // Padding alrededor del cartel
+        val layoutParams = FrameLayout.LayoutParams(
+            (boundingBox.width() * scaleX + padding * 2).toInt(),
+            (boundingBox.height() * scaleY + padding * 2).toInt()
+        )
+        
+        val scaledLeft = (boundingBox.left * scaleX - padding).toInt()
+        val scaledTop = (boundingBox.top * scaleY - padding).toInt()
+        
+        layoutParams.leftMargin = scaledLeft
+        layoutParams.topMargin = scaledTop
+        
+        borderView.layoutParams = layoutParams
+        return borderView
     }
     
     fun hideOverlays() {

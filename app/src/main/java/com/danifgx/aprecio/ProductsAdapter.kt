@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
 class ProductsAdapter(
@@ -40,6 +41,40 @@ class ProductsAdapter(
             "${String.format("%.2f", product.pricePerKg)}€/kg"
         }
         holder.productDetails.text = details
+
+        // Si es producto engañoso, marcar en rojo
+        if (product.isDeceptive) {
+            val redColor = ContextCompat.getColor(holder.itemView.context, android.R.color.holo_red_dark)
+            val whiteColor = ContextCompat.getColor(holder.itemView.context, android.R.color.white)
+            
+            // Fondo rojo para el item completo
+            holder.itemView.setBackgroundResource(0) // Remover fondo de card
+            holder.itemView.setBackgroundColor(redColor)
+            
+            // Textos en blanco para contraste
+            holder.productNumber.setTextColor(whiteColor)
+            holder.productName.setTextColor(whiteColor)
+            holder.productPrice.setTextColor(whiteColor)
+            holder.productDetails.setTextColor(whiteColor)
+            
+            // Añadir texto de alerta
+            holder.productDetails.text = details + " ⚠️ POSIBLE ENGAÑO"
+        } else {
+            // Restaurar apariencia normal de la card - dejar que MaterialCardView maneje su propio fondo
+            holder.itemView.setBackgroundResource(0)
+            holder.itemView.background = null
+            
+            // Restaurar colores por defecto del XML
+            val defaultTextColor = ContextCompat.getColor(holder.itemView.context, android.R.color.black)
+            val numberTextColor = ContextCompat.getColor(holder.itemView.context, android.R.color.white) // El número siempre blanco
+            val priceTextColor = ContextCompat.getColor(holder.itemView.context, android.R.color.holo_blue_dark)
+            val detailTextColor = ContextCompat.getColor(holder.itemView.context, android.R.color.darker_gray)
+            
+            holder.productNumber.setTextColor(numberTextColor)
+            holder.productName.setTextColor(defaultTextColor)
+            holder.productPrice.setTextColor(priceTextColor)
+            holder.productDetails.setTextColor(detailTextColor)
+        }
 
         holder.itemView.setOnClickListener {
             onProductClick(product, productNumber)
